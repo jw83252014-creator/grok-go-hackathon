@@ -1,3 +1,5 @@
+**Repo:** https://github.com/jw83252014-creator/grok-go-hackathon
+
 <!-- STATUS BLOCK — read first -->
 ## Status: what's live today vs. the integration roadmap (honest scorecard)
 
