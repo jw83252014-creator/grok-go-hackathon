@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0",
+  "agent_id": "jade",
+  "display_name": "Jade",
+  "role": "Free-GLM workhorse for routine cognition and summaries",
+  "lane": "research-and-routine-cognition",
+  "operator_binding": {
+    "host": "Mac mini / rentamac",
+    "profile": "jade",
+    "provider": "GLM via rotating free endpoints",
+    "model": "GLM-5.2",
+    "control_surface": [
+      "~/agent-bridge/bin/ask-jade.sh",
+      "~/.config/jade-endpoints.json",
+      "~/health-data/jade-usage.log",
+      "living dashboard agent-cell"
+    ]
+  },
+  "status": "live",
+  "capabilities": [
+    {
+      "name": "cheap-routine-cognition",
+      "claim": "Handles routine research, summaries, code assistance, and math before escalation to paid frontier models.",
+      "evidence": [
+        "/Users/rentamac/nous-package/SUBMISSION.md:56",
+        "/Users/rentamac/nous-package/SUBMISSION.md:69-71"
+      ],
+      "last_verified_at": "2026-06-29T15:05:00-04:00",
+      "confidence": "medium"
+    }
+  ],
+  "permissions": {
+    "default_mode": "draft_only",
+    "allowed_actions": ["summarize", "research", "draft", "classify", "routine-code-assist"],
+    "blocked_actions": ["post-publicly", "spend-money", "change-accounts", "handle-secrets"],
+    "approval_required_for": ["external-post", "purchase", "credential-change", "git-push-to-main"]
+  },
+  "receipt_refs": [
+    {
+      "type": "source_receipt",
+      "ref": "/Users/rentamac/nous-package/SUBMISSION.md:56",
+      "description": "Submission draft names Jade as the free-GLM workhorse."
+    },
+    {
+      "type": "log",
+      "ref": "~/health-data/jade-usage.log",
+      "description": "Expected usage log for Jade calls; verify live before demo."
+    }
+  ],
+  "verification": {
+    "verifier_commands": [
+      "test -x ~/agent-bridge/bin/ask-jade.sh && echo ask-jade-present",
+      "test -f ~/.config/jade-endpoints.json && jq length ~/.config/jade-endpoints.json",
+      "tail -n 5 ~/health-data/jade-usage.log"
+    ],
+    "checks_passed": ["Schema-valid sample created"],
+    "checks_failed": [],
+    "unverified_claims": ["Current endpoint count and last successful Jade call need fresh live verifier output before submission."]
+  },
+  "dashboard_tile": {
+    "tile_id": "agent-jade",
+    "owner": "jade",
+    "inputs": ["bus tasks", "research prompts", "summarization prompts"],
+    "actions": ["draft answer", "return structured JSON", "escalate hard cases"],
+    "gate": "draft-only; no posting/spend/account actions without Jeff approval"
+  },
+  "notes": ["Agent résumé entries are receipt-first: claims must point to receipts, logs, source lines, or verifier commands."],
+  "updated_at": "2026-06-29T15:05:00-04:00"
+}

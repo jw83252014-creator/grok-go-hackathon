@@ -1,0 +1,1754 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070a0c">
+  <meta name="description" content="A live, bounded, read-only organism dashboard for the Grok Go agent cells.">
+  <title>Living Dashboard - Null Axiom</title>
+  <link rel="stylesheet" href="assets/site.css">
+  <style>
+    :root {
+      --dash-bg: #070a0c;
+      --dash-bg-2: #0d1113;
+      --dash-panel: rgba(17, 24, 25, 0.86);
+      --dash-panel-2: rgba(22, 31, 30, 0.82);
+      --dash-rail: rgba(234, 242, 236, 0.07);
+      --dash-line: rgba(204, 231, 222, 0.16);
+      --dash-line-strong: rgba(111, 215, 200, 0.34);
+      --dash-ink: #f2f7f2;
+      --dash-muted: #a5b6ae;
+      --dash-soft: #74827d;
+      --dash-teal: #6fd7c8;
+      --dash-green: #8fd172;
+      --dash-gold: #e6bd5f;
+      --dash-rust: #d98260;
+      --dash-red: #e07170;
+      --dash-violet: #b99bf0;
+      --dash-blue: #78aee8;
+      --dash-shadow: rgba(0, 0, 0, 0.42);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100svh;
+      background:
+        radial-gradient(circle at 18% -12%, rgba(111, 215, 200, 0.16), transparent 34rem),
+        radial-gradient(circle at 88% 12%, rgba(230, 189, 95, 0.10), transparent 26rem),
+        linear-gradient(180deg, #070a0c 0%, #0b0f11 48%, #080a0b 100%);
+      color: var(--dash-ink);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -2;
+      background:
+        linear-gradient(rgba(111, 215, 200, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(111, 215, 200, 0.03) 1px, transparent 1px);
+      background-size: 38px 38px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.82), transparent 78%);
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      background: linear-gradient(180deg, rgba(7, 10, 12, 0.12), rgba(7, 10, 12, 0.84));
+    }
+
+    .site-nav {
+      background: rgba(7, 10, 12, 0.84);
+      border-bottom-color: var(--dash-line);
+    }
+
+    .nav-links a[aria-current="page"] {
+      color: var(--dash-teal);
+    }
+
+    .dashboard-shell {
+      width: min(1440px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 28px 0 48px;
+    }
+
+    .dashboard-hero {
+      position: relative;
+      overflow: hidden;
+      min-height: clamp(560px, 72svh, 780px);
+      display: grid;
+      grid-template-columns: minmax(0, 1.02fr) minmax(340px, 0.68fr);
+      gap: 18px;
+      align-items: stretch;
+      border: 1px solid var(--dash-line);
+      border-radius: 8px;
+      background:
+        linear-gradient(120deg, rgba(7, 10, 12, 0.96), rgba(7, 10, 12, 0.82) 54%, rgba(7, 10, 12, 0.72)),
+        url("assets/agent-loop.png") center / cover no-repeat;
+      box-shadow: 0 28px 70px var(--dash-shadow);
+    }
+
+    .hero-copy {
+      min-width: 0;
+      display: grid;
+      align-content: end;
+      gap: 22px;
+      padding: clamp(22px, 4vw, 46px);
+    }
+
+    .hero-copy h1 {
+      max-width: 780px;
+      margin: 0;
+      font-size: clamp(42px, 7vw, 94px);
+      line-height: 0.92;
+      letter-spacing: 0;
+    }
+
+    .hero-copy p {
+      max-width: 760px;
+      margin: 0;
+      color: #dbe7e1;
+      font-size: clamp(17px, 2.1vw, 23px);
+      line-height: 1.34;
+    }
+
+    .hero-status {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      max-width: 760px;
+    }
+
+    .hero-stat,
+    .data-feed,
+    .panel,
+    .cell-card,
+    .gate-card,
+    .signal-card {
+      border: 1px solid var(--dash-line);
+      border-radius: 8px;
+      background: var(--dash-panel);
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.24);
+      backdrop-filter: blur(18px);
+    }
+
+    .hero-stat {
+      min-height: 96px;
+      padding: 14px;
+    }
+
+    .hero-stat b {
+      display: block;
+      color: var(--dash-gold);
+      font-size: clamp(28px, 4.8vw, 54px);
+      line-height: 0.95;
+    }
+
+    .hero-stat span {
+      display: block;
+      margin-top: 8px;
+      color: var(--dash-muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .hero-side {
+      display: grid;
+      align-content: stretch;
+      gap: 12px;
+      padding: 14px;
+      background:
+        linear-gradient(180deg, rgba(7, 10, 12, 0.36), rgba(7, 10, 12, 0.86)),
+        url("assets/grok-avatar-cells.jpg") center top / cover no-repeat;
+      border-left: 1px solid var(--dash-line);
+    }
+
+    .data-feed {
+      align-self: start;
+      padding: 15px;
+      background: rgba(7, 10, 12, 0.72);
+    }
+
+    .feed-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(204, 231, 222, 0.10);
+    }
+
+    .feed-row:last-child { border-bottom: 0; }
+
+    .feed-label {
+      color: var(--dash-soft);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 800;
+    }
+
+    .feed-value {
+      color: var(--dash-ink);
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .layer-bar {
+      position: sticky;
+      top: 58px;
+      z-index: 12;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 18px 0;
+      padding: 10px;
+      border: 1px solid var(--dash-line);
+      border-radius: 8px;
+      background: rgba(7, 10, 12, 0.82);
+      backdrop-filter: blur(18px);
+    }
+
+    .layer-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button,
+    .icon-button {
+      font: inherit;
+    }
+
+    .layer-tab,
+    .refresh-button,
+    .gate-button,
+    .cell-node {
+      min-height: 42px;
+      border: 1px solid var(--dash-line);
+      border-radius: 8px;
+      background: rgba(242, 247, 242, 0.06);
+      color: var(--dash-muted);
+      cursor: pointer;
+      transition: border-color 0.16s ease, color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+    }
+
+    .layer-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 10px 13px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .layer-tab[aria-pressed="true"],
+    .refresh-button:hover,
+    .gate-button:hover,
+    .cell-node:hover {
+      border-color: var(--dash-line-strong);
+      color: var(--dash-ink);
+      background: rgba(111, 215, 200, 0.10);
+    }
+
+    .refresh-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      color: var(--dash-ink);
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .layer-note {
+      color: var(--dash-soft);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .status-dot,
+    .mini-dot {
+      display: inline-block;
+      border-radius: 999px;
+      background: var(--dash-muted);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      box-shadow: 0 0 0 5px rgba(165, 182, 174, 0.08);
+    }
+
+    .mini-dot {
+      width: 8px;
+      height: 8px;
+      margin-right: 7px;
+    }
+
+    .status-healthy { --status: var(--dash-green); }
+    .status-working { --status: var(--dash-teal); }
+    .status-waiting { --status: var(--dash-gold); }
+    .status-warning { --status: var(--dash-rust); }
+    .status-critical { --status: var(--dash-red); }
+    .status-gated { --status: var(--dash-violet); }
+    .status-healthy .status-dot,
+    .status-healthy .mini-dot,
+    .status-working .status-dot,
+    .status-working .mini-dot,
+    .status-waiting .status-dot,
+    .status-waiting .mini-dot,
+    .status-warning .status-dot,
+    .status-warning .mini-dot,
+    .status-critical .status-dot,
+    .status-critical .mini-dot,
+    .status-gated .status-dot,
+    .status-gated .mini-dot {
+      background: var(--status);
+      box-shadow: 0 0 0 5px color-mix(in srgb, var(--status) 14%, transparent);
+    }
+
+    .status-working .status-dot {
+      animation: cellPulse 1.8s ease-out infinite;
+    }
+
+    @keyframes cellPulse {
+      0% { box-shadow: 0 0 0 0 rgba(111, 215, 200, 0.34); }
+      74% { box-shadow: 0 0 0 12px rgba(111, 215, 200, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(111, 215, 200, 0); }
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid color-mix(in srgb, var(--status, var(--dash-muted)) 34%, transparent);
+      border-radius: 999px;
+      padding: 6px 9px;
+      background: color-mix(in srgb, var(--status, var(--dash-muted)) 10%, transparent);
+      color: var(--dash-ink);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(360px, 0.62fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .panel {
+      padding: clamp(16px, 2vw, 22px);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .panel-title {
+      min-width: 0;
+    }
+
+    .panel-title h2,
+    .panel-title h3 {
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    .panel-title h2 {
+      font-size: clamp(26px, 3.4vw, 44px);
+      line-height: 1;
+    }
+
+    .panel-title h3 {
+      font-size: 18px;
+      line-height: 1.16;
+    }
+
+    .panel-title p,
+    .muted {
+      margin: 7px 0 0;
+      color: var(--dash-muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .kicker2 {
+      margin-bottom: 8px;
+      color: var(--dash-teal);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .icon-mark {
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border: 1px solid var(--dash-line);
+      border-radius: 8px;
+      background: rgba(111, 215, 200, 0.08);
+      color: var(--dash-teal);
+    }
+
+    .icon-mark svg {
+      width: 21px;
+      height: 21px;
+      display: block;
+    }
+
+    .metric-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric-tile {
+      min-height: 112px;
+      padding: 14px;
+      border: 1px solid var(--dash-line);
+      border-radius: 8px;
+      background: var(--dash-panel-2);
+    }
+
+    .metric-tile b {
+      display: block;
+      color: var(--dash-gold);
+      font-size: clamp(28px, 4vw, 46px);
+      line-height: 1;
+    }
+
+    .metric-tile span {
+      display: block;
+      margin-top: 10px;
+      color: var(--dash-muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .organism-map {
+      position: relative;
+      overflow: hidden;
+      min-height: 520px;
+      background:
+        radial-gradient(circle at center, rgba(111, 215, 200, 0.18), transparent 16rem),
+        linear-gradient(180deg, rgba(12, 18, 20, 0.96), rgba(8, 12, 13, 0.96));
+    }
+
+    .cell-garden {
+      position: relative;
+      min-height: 362px;
+      display: grid;
+      place-items: center;
+      margin-top: 10px;
+      border: 1px solid rgba(204, 231, 222, 0.10);
+      border-radius: 8px;
+      background:
+        radial-gradient(circle at center, rgba(111, 215, 200, 0.12), transparent 40%),
+        linear-gradient(90deg, rgba(111, 215, 200, 0.05) 1px, transparent 1px),
+        linear-gradient(rgba(111, 215, 200, 0.04) 1px, transparent 1px);
+      background-size: auto, 42px 42px, 42px 42px;
+    }
+
+    .garden-lines {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      opacity: 0.74;
+    }
+
+    .core {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      place-items: center;
+      width: min(34vw, 178px);
+      min-width: 128px;
+      aspect-ratio: 1;
+      border: 1px solid rgba(111, 215, 200, 0.42);
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, rgba(111, 215, 200, 0.34), rgba(111, 215, 200, 0.08) 52%, transparent 72%),
+        rgba(7, 10, 12, 0.72);
+      color: #eafff9;
+      text-align: center;
+      box-shadow: 0 0 54px rgba(111, 215, 200, 0.18);
+    }
+
+    .core b {
+      display: block;
+      font-size: clamp(30px, 5vw, 56px);
+      line-height: 0.94;
+    }
+
+    .core span {
+      display: block;
+      margin-top: 8px;
+      color: var(--dash-muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 850;
+    }
+
+    .cell-node {
+      position: absolute;
+      z-index: 3;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 8px;
+      width: min(36vw, 174px);
+      padding: 9px;
+      text-align: left;
+      color: var(--dash-ink);
+      background: rgba(8, 12, 13, 0.82);
+      box-shadow: 0 16px 36px rgba(0,0,0,0.22);
+    }
+
+    .cell-node:hover {
+      transform: translateY(-2px);
+    }
+
+    .node-name {
+      display: block;
+      overflow: hidden;
+      color: var(--dash-ink);
+      font-size: 12px;
+      font-weight: 850;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .node-role {
+      display: block;
+      overflow: hidden;
+      color: var(--dash-soft);
+      font-size: 10px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .node-0 { top: 8%; left: 44%; }
+    .node-1 { top: 20%; right: 5%; }
+    .node-2 { top: 48%; right: 2%; }
+    .node-3 { right: 15%; bottom: 7%; }
+    .node-4 { left: 42%; bottom: 5%; }
+    .node-5 { left: 11%; bottom: 9%; }
+    .node-6 { top: 48%; left: 2%; }
+    .node-7 { top: 19%; left: 7%; }
+    .node-8 { top: 4%; left: 20%; }
+    .node-9 { top: 7%; right: 22%; }
+    .node-10 { bottom: 25%; right: 33%; }
+    .node-11 { bottom: 24%; left: 31%; }
+
+    .selected-cell {
+      margin-top: 14px;
+      padding: 14px;
+      border: 1px solid var(--dash-line);
+      border-radius: 8px;
+      background: rgba(7, 10, 12, 0.56);
+    }
+
+    .cell-grid,
+    .panel-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .cell-card {
+      min-width: 0;
+      padding: 15px;
+      background: rgba(14, 20, 21, 0.88);
+    }
+
+    .cell-card:hover {
+      border-color: color-mix(in srgb, var(--status, var(--dash-teal)) 36%, transparent);
+    }
+
+    .cell-card h3 {
+      margin: 0 0 4px;
+      color: var(--dash-ink);
+      font-size: 17px;
+      line-height: 1.16;
+    }
+
+    .cell-card .role {
+      min-height: 36px;
+      color: var(--dash-muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .cell-task {
+      min-height: 46px;
+      margin: 12px 0;
+      color: #d8e4df;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 13px;
+    }
+
+    .anatomy {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 11px;
+      border: 1px solid rgba(204, 231, 222, 0.10);
+      border-radius: 8px;
+      background: rgba(7, 10, 12, 0.42);
+    }
+
+    .anatomy div {
+      display: grid;
+      grid-template-columns: 104px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+    }
+
+    .anatomy dt {
+      color: var(--dash-soft);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .anatomy dd {
+      margin: 0;
+      color: #dce7e2;
+      font-size: 12px;
+      line-height: 1.38;
+      overflow-wrap: anywhere;
+    }
+
+    .panel-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .signal-card {
+      padding: 14px;
+    }
+
+    .signal-card h3 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 0 0 10px;
+      font-size: 16px;
+      line-height: 1.2;
+    }
+
+    .signal-value {
+      color: var(--dash-gold);
+      font-size: clamp(24px, 3vw, 38px);
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    .signal-list {
+      display: grid;
+      gap: 10px;
+      margin: 12px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .signal-list li {
+      padding: 10px;
+      border: 1px solid rgba(204, 231, 222, 0.10);
+      border-radius: 8px;
+      background: rgba(7, 10, 12, 0.38);
+      color: #d7e2dd;
+      font-size: 12px;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .gate-card {
+      padding: 16px;
+      border-color: rgba(185, 155, 240, 0.28);
+      background:
+        linear-gradient(135deg, rgba(185, 155, 240, 0.12), transparent 46%),
+        rgba(11, 14, 16, 0.92);
+    }
+
+    .gate-card h2 {
+      margin: 0;
+      font-size: clamp(24px, 3.4vw, 38px);
+      line-height: 1;
+    }
+
+    .gate-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .gate-input {
+      min-height: 44px;
+      border: 1px solid var(--dash-line);
+      border-radius: 8px;
+      background: rgba(7, 10, 12, 0.72);
+      color: var(--dash-ink);
+      padding: 10px 12px;
+      font: inherit;
+    }
+
+    .gate-button {
+      padding: 10px 13px;
+      color: var(--dash-ink);
+      font-weight: 850;
+    }
+
+    .control-room {
+      display: none;
+    }
+
+    body[data-layer="private"] .terrarium-only {
+      display: none;
+    }
+
+    body[data-layer="private"] .control-room {
+      display: grid;
+      gap: 18px;
+    }
+
+    body[data-layer="public"] .private-only {
+      display: none;
+    }
+
+    body:not(.private-unlocked) .private-data {
+      display: none;
+    }
+
+    body.private-unlocked .private-lock {
+      display: none;
+    }
+
+    .safety-rail {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .safety-item {
+      min-height: 96px;
+      padding: 13px;
+      border: 1px solid rgba(204, 231, 222, 0.11);
+      border-radius: 8px;
+      background: rgba(7, 10, 12, 0.38);
+    }
+
+    .safety-item b {
+      display: block;
+      color: var(--dash-ink);
+      font-size: 13px;
+      line-height: 1.3;
+    }
+
+    .safety-item span {
+      display: block;
+      margin-top: 7px;
+      color: var(--dash-muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      color: var(--dash-muted);
+      font-size: 12px;
+    }
+
+    .footer-note {
+      margin-top: 28px;
+      padding: 18px 0 0;
+      border-top: 1px solid var(--dash-line);
+      color: var(--dash-soft);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 1120px) {
+      .dashboard-hero,
+      .section-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-side {
+        min-height: 320px;
+        border-left: 0;
+        border-top: 1px solid var(--dash-line);
+      }
+
+      .cell-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .metric-strip,
+      .safety-rail {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .dashboard-shell {
+        width: min(100% - 18px, 640px);
+        padding-top: 12px;
+      }
+
+      .dashboard-hero {
+        min-height: auto;
+      }
+
+      .hero-copy {
+        padding: 22px 16px 18px;
+      }
+
+      .hero-status,
+      .metric-strip,
+      .cell-grid,
+      .panel-grid,
+      .safety-rail {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-side {
+        min-height: 280px;
+        padding: 10px;
+      }
+
+      .layer-bar {
+        top: 0;
+        align-items: stretch;
+      }
+
+      .layer-tabs,
+      .refresh-button {
+        width: 100%;
+      }
+
+      .layer-tab {
+        flex: 1 1 150px;
+        justify-content: center;
+      }
+
+      .refresh-button {
+        justify-content: center;
+      }
+
+      .cell-garden {
+        min-height: 520px;
+        align-items: center;
+      }
+
+      .core {
+        width: 132px;
+      }
+
+      .cell-node {
+        width: min(44vw, 162px);
+      }
+
+      .node-0 { top: 4%; left: 31%; }
+      .node-1 { top: 15%; right: 2%; }
+      .node-2 { top: 35%; right: 1%; }
+      .node-3 { right: 5%; bottom: 21%; }
+      .node-4 { left: 31%; bottom: 4%; }
+      .node-5 { left: 3%; bottom: 21%; }
+      .node-6 { top: 35%; left: 1%; }
+      .node-7 { top: 15%; left: 2%; }
+      .node-8 { top: 25%; left: 29%; }
+      .node-9 { top: 25%; right: 29%; }
+      .node-10 { bottom: 33%; right: 23%; }
+      .node-11 { bottom: 33%; left: 23%; }
+
+      .anatomy div {
+        grid-template-columns: 1fr;
+        gap: 3px;
+      }
+
+      .gate-form {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.001ms !important;
+      }
+    }
+  </style>
+</head>
+<body data-layer="public">
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a class="brand" href="/">Null Axiom</a>
+      <div class="nav-links">
+        <a href="/carapace">Carapace</a>
+        <a href="/organism">Organism</a>
+        <a href="/living-dashboard" aria-current="page">Dashboard</a>
+        <a href="/agents-office">Office</a>
+        <a href="/data-room">Data Room</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="dashboard-shell">
+    <header class="dashboard-hero" aria-labelledby="page-title">
+      <div class="hero-copy">
+        <div>
+          <div class="kicker2">Organism conscious interface</div>
+          <h1 id="page-title">Living Dashboard</h1>
+        </div>
+        <p>
+          A read-only surface for the Grok Go organism: metabolism, cells, immune system,
+          memory, and vitality made legible without becoming a posting, trading, shell, or
+          credential control plane.
+        </p>
+        <div class="hero-status" aria-label="Organism vital signs">
+          <div class="hero-stat">
+            <b id="hero-vitality">--</b>
+            <span>Vitality index <span id="formula-version">formula loading</span></span>
+          </div>
+          <div class="hero-stat">
+            <b id="hero-cells">--</b>
+            <span>Live cells from sanitized organism status</span>
+          </div>
+          <div class="hero-stat">
+            <b id="hero-bridge">--</b>
+            <span>Bridge pulse on local port 8787</span>
+          </div>
+        </div>
+      </div>
+
+      <aside class="hero-side" aria-label="Live feed boundary">
+        <div class="data-feed">
+          <div class="feed-row">
+            <span class="feed-label">Status JSON</span>
+            <span class="feed-value" id="status-feed">loading</span>
+          </div>
+          <div class="feed-row">
+            <span class="feed-label">Bridge</span>
+            <span class="feed-value" id="bridge-feed">probing :8787</span>
+          </div>
+          <div class="feed-row">
+            <span class="feed-label">Public layer</span>
+            <span class="feed-value">sanitized, read-only</span>
+          </div>
+          <div class="feed-row">
+            <span class="feed-label">Private layer</span>
+            <span class="feed-value">gated, redacted, local</span>
+          </div>
+        </div>
+      </aside>
+    </header>
+
+    <div class="layer-bar" aria-label="Dashboard layer switcher">
+      <div class="layer-tabs">
+        <button class="layer-tab" type="button" data-layer-button="public" aria-pressed="true">
+          <span class="icon-mark" aria-hidden="true"></span>
+          Public Terrarium
+        </button>
+        <button class="layer-tab" type="button" data-layer-button="private" aria-pressed="false">
+          <span class="icon-mark" aria-hidden="true"></span>
+          Private Control Room
+        </button>
+      </div>
+      <button class="refresh-button" type="button" id="refresh-button" aria-label="Refresh live reads">
+        <span class="status-dot" aria-hidden="true"></span>
+        Refresh read
+      </button>
+      <div class="layer-note" id="layer-note">Public Terrarium shows sanitized telemetry and public-safe cell state.</div>
+    </div>
+
+    <div class="terrarium-only">
+      <section class="section-grid" aria-label="Public Terrarium">
+        <div class="stack">
+          <article class="panel organism-map status-working" id="organism-map-panel">
+            <div class="panel-head">
+              <div class="panel-title">
+                <div class="kicker2">Cell garden</div>
+                <h2>The organism at a glance.</h2>
+                <p>Every visible cell is a bounded agent-cell with owner, inputs, allowed action, gate, and status.</p>
+              </div>
+              <span class="status-badge"><span class="mini-dot"></span>Working</span>
+            </div>
+            <div class="cell-garden">
+              <svg class="garden-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <linearGradient id="lineGlow" x1="0" x2="1" y1="0" y2="1">
+                    <stop offset="0" stop-color="#6fd7c8" stop-opacity="0.08"/>
+                    <stop offset="0.55" stop-color="#6fd7c8" stop-opacity="0.62"/>
+                    <stop offset="1" stop-color="#e6bd5f" stop-opacity="0.14"/>
+                  </linearGradient>
+                </defs>
+                <path d="M50 50 C48 18 48 18 50 8" stroke="url(#lineGlow)" stroke-width="0.34" fill="none"/>
+                <path d="M50 50 C76 20 82 20 91 27" stroke="url(#lineGlow)" stroke-width="0.34" fill="none"/>
+                <path d="M50 50 C82 48 90 48 96 55" stroke="url(#lineGlow)" stroke-width="0.34" fill="none"/>
+                <path d="M50 50 C74 76 78 86 87 90" stroke="url(#lineGlow)" stroke-width="0.34" fill="none"/>
+                <path d="M50 50 C48 76 48 90 50 96" stroke="url(#lineGlow)" stroke-width="0.34" fill="none"/>
+                <path d="M50 50 C24 76 18 88 10 88" stroke="url(#lineGlow)" stroke-width="0.34" fill="none"/>
+                <path d="M50 50 C18 48 10 48 4 55" stroke="url(#lineGlow)" stroke-width="0.34" fill="none"/>
+                <path d="M50 50 C24 20 18 20 10 27" stroke="url(#lineGlow)" stroke-width="0.34" fill="none"/>
+                <path d="M50 50 C24 4 25 5 28 9" stroke="url(#lineGlow)" stroke-width="0.22" fill="none"/>
+                <path d="M50 50 C74 4 74 5 72 9" stroke="url(#lineGlow)" stroke-width="0.22" fill="none"/>
+                <path d="M50 50 C70 66 68 68 66 76" stroke="url(#lineGlow)" stroke-width="0.22" fill="none"/>
+                <path d="M50 50 C30 66 32 68 34 76" stroke="url(#lineGlow)" stroke-width="0.22" fill="none"/>
+              </svg>
+              <div class="core" aria-label="Vitality core">
+                <div>
+                  <b id="core-vitality">--</b>
+                  <span>Vitality</span>
+                </div>
+              </div>
+              <div id="cell-nodes"></div>
+            </div>
+            <div class="selected-cell" id="selected-cell"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div class="panel-title">
+                <div class="kicker2">Live agent-cells</div>
+                <h2>Cells expose their boundary.</h2>
+                <p>Status labels are restricted to Healthy, Working, Waiting, Warning, Critical, and Gated.</p>
+              </div>
+            </div>
+            <div class="legend" id="status-legend"></div>
+            <div class="cell-grid" id="cell-grid" style="margin-top:14px"></div>
+          </article>
+        </div>
+
+        <aside class="stack">
+          <article class="panel">
+            <div class="panel-head">
+              <div class="panel-title">
+                <div class="kicker2">Vital signs</div>
+                <h2>Metabolism, immune, memory.</h2>
+              </div>
+            </div>
+            <div class="metric-strip">
+              <div class="metric-tile">
+                <b id="metric-vitality">--</b>
+                <span>Vitality index</span>
+              </div>
+              <div class="metric-tile">
+                <b id="metric-working">--</b>
+                <span>Working cells</span>
+              </div>
+              <div class="metric-tile">
+                <b id="metric-gated">--</b>
+                <span>Gated or warning cells</span>
+              </div>
+              <div class="metric-tile">
+                <b id="metric-memory">--</b>
+                <span>Structured memory pages</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div class="panel-title">
+                <div class="kicker2">Dashboard panels as cells</div>
+                <h2>Each panel has a job.</h2>
+                <p>No hidden autonomy. Panels display, warn, summarize, or recommend inside a gate.</p>
+              </div>
+            </div>
+            <div class="panel-grid" id="panel-grid"></div>
+          </article>
+        </aside>
+      </section>
+    </div>
+
+    <section class="control-room" aria-label="Private Control Room">
+      <article class="gate-card private-lock status-gated">
+        <div class="panel-head">
+          <div class="panel-title">
+            <div class="kicker2">Private Control Room</div>
+            <h2>Gated read-only layer.</h2>
+            <p>
+              This local gate reveals redacted bridge summaries and private-operation signals. It does not post,
+              trade, run shell commands, enter credentials, submit forms, or spend money.
+            </p>
+          </div>
+          <span class="status-badge"><span class="mini-dot"></span>Gated</span>
+        </div>
+        <div class="safety-rail">
+          <div class="safety-item"><b>No posting</b><span>Draft and review only. Public sends stay outside this page.</span></div>
+          <div class="safety-item"><b>No trading</b><span>Market/account events are redacted and never actioned here.</span></div>
+          <div class="safety-item"><b>No shell</b><span>No terminal, restart, install, file-delete, or credential controls.</span></div>
+          <div class="safety-item"><b>No secrets</b><span>Tokens, emails, local paths, bearer strings, and keys are redacted.</span></div>
+        </div>
+        <form class="gate-form" id="private-gate-form">
+          <label class="sr-only" for="private-gate-input">Private Control Room gate phrase</label>
+          <input class="gate-input" id="private-gate-input" type="text" autocomplete="off" spellcheck="false" placeholder="Type READ ONLY">
+          <button class="gate-button" type="submit">Open gated view</button>
+        </form>
+        <p class="muted" id="gate-message" aria-live="polite"></p>
+      </article>
+
+      <div class="private-data">
+        <section class="section-grid">
+          <div class="stack">
+            <article class="panel status-gated">
+              <div class="panel-head">
+                <div class="panel-title">
+                  <div class="kicker2">Local bridge pulse</div>
+                  <h2>Private signals, redacted.</h2>
+                  <p>Bridge data comes from local port 8787. This panel only reads and summarizes.</p>
+                </div>
+                <span class="status-badge"><span class="mini-dot"></span>Gated</span>
+              </div>
+              <div class="metric-strip">
+                <div class="metric-tile">
+                  <b id="private-bridge-agents">--</b>
+                  <span>Bridge agents visible</span>
+                </div>
+                <div class="metric-tile">
+                  <b id="private-bridge-approvals">--</b>
+                  <span>Pending approvals</span>
+                </div>
+                <div class="metric-tile">
+                  <b id="private-bridge-messages">--</b>
+                  <span>Meeting lines read</span>
+                </div>
+                <div class="metric-tile">
+                  <b id="private-bridge-metabolism">--</b>
+                  <span>Local model pulse</span>
+                </div>
+              </div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head">
+                <div class="panel-title">
+                  <div class="kicker2">Recent bridge signals</div>
+                  <h2>Redacted log edge.</h2>
+                  <p>These snippets are for situational awareness only. Risky/account-adjacent content is masked.</p>
+                </div>
+              </div>
+              <ul class="signal-list" id="private-signal-list">
+                <li>No bridge signals loaded yet.</li>
+              </ul>
+            </article>
+          </div>
+
+          <aside class="stack">
+            <article class="panel">
+              <div class="panel-head">
+                <div class="panel-title">
+                  <div class="kicker2">Gate matrix</div>
+                  <h2>Boundaries remain explicit.</h2>
+                </div>
+              </div>
+              <div class="panel-grid" id="private-gate-grid"></div>
+            </article>
+          </aside>
+        </section>
+      </div>
+    </section>
+
+    <p class="footer-note">
+      Sources: <code>assets/organism-status.json</code>, local Agent Bridge <code>:8787</code>, and the dashboard-as-conscious-interface roadmap.
+      This v1 intentionally contains no posting, trading, shell, credential, account-setting, billing, or spend controls.
+    </p>
+  </main>
+
+  <script>
+    const STATUS_ORDER = ["healthy", "working", "waiting", "warning", "critical", "gated"];
+    const STATUS_LABELS = {
+      healthy: "Healthy",
+      working: "Working",
+      waiting: "Waiting",
+      warning: "Warning",
+      critical: "Critical",
+      gated: "Gated"
+    };
+
+    const PANEL_MANIFEST = [
+      {
+        id: "metabolism",
+        label: "Metabolism",
+        icon: "pulse",
+        status: "working",
+        owner: "Metabolism Checker Cell",
+        inputs: "organism-status energy, bridge metabolism, local-model pulse",
+        allowed: "display energy state, warn, recommend local-first use",
+        gate: "Jeff approval for spend, paid loops, billing, or provider changes"
+      },
+      {
+        id: "cells",
+        label: "Cells",
+        icon: "cell",
+        status: "working",
+        owner: "Cell Registry Cell",
+        inputs: "organism-status cells plus bridge-discovered agents",
+        allowed: "display status, group by role, surface current task",
+        gate: "human review before changing agent roles or dispatch rules"
+      },
+      {
+        id: "immune",
+        label: "Immune",
+        icon: "shield",
+        status: "healthy",
+        owner: "Watcher / Immune Cell",
+        inputs: "watcher status, approval queue, bridge anomalies",
+        allowed: "display, warn, recommend bounded repair",
+        gate: "human approval for persistent service changes or risky repair"
+      },
+      {
+        id: "memory",
+        label: "Memory",
+        icon: "memory",
+        status: "working",
+        owner: "Researcher / Mining Engine Cell",
+        inputs: "structured pages, raw sources waiting, coverage gaps",
+        allowed: "summarize digestion, flag gaps, propose source work",
+        gate: "review before public claims or genome/directive edits"
+      },
+      {
+        id: "vitality",
+        label: "Vitality",
+        icon: "vital",
+        status: "working",
+        owner: "Vitality Formula Cell",
+        inputs: "vitality score, formula version, cell status distribution",
+        allowed: "display composite score and formula version",
+        gate: "formula changes require receipt and review"
+      },
+      {
+        id: "approvals",
+        label: "Approval gate",
+        icon: "lock",
+        status: "gated",
+        owner: "Approval Cell",
+        inputs: "bridge approvals and status JSON gate counters",
+        allowed: "display queue counts and risk class",
+        gate: "Jeff explicitly approves external sends, spend, account changes"
+      }
+    ];
+
+    const CELL_PROFILES = [
+      {
+        test: /fable/i,
+        owner: "Fable Cell",
+        inputs: "architecture notes, bridge handoffs, specs",
+        allowed: "reason, review, route architecture",
+        gate: "human review before irreversible or public system changes"
+      },
+      {
+        test: /keystone|codex/i,
+        owner: "Keystone / Codex Cell",
+        inputs: "repo state, scoped tasks, specs, tests",
+        allowed: "build, edit, test, commit scoped artifacts",
+        gate: "no sends, spend, account changes, credentials, or destructive git without approval"
+      },
+      {
+        test: /orchestrator|coo/i,
+        owner: "Orchestrator Cell",
+        inputs: "backlog, content plan, bridge status",
+        allowed: "rank work, draft plans, route owners",
+        gate: "no public publishing or external messages without explicit approval"
+      },
+      {
+        test: /carapace/i,
+        owner: "Carapace Local Model Cell",
+        inputs: "local traces, RAG corpus, MLX model status",
+        allowed: "prefilter, summarize, suggest low-cost paths",
+        gate: "no model/provider changes or paid escalation without review"
+      },
+      {
+        test: /vega|creative/i,
+        owner: "Creative Director Cell",
+        inputs: "approved visual goals, artifacts, brand notes",
+        allowed: "draft prompts, compare options, prepare visual cards",
+        gate: "human approval before public use or paid generation"
+      },
+      {
+        test: /altair|security/i,
+        owner: "Altair Security Cell",
+        inputs: "approval gates, secrets scans, risky behavior signals",
+        allowed: "audit, warn, isolate risk, propose mitigations",
+        gate: "no credential rotation or account changes without approval"
+      },
+      {
+        test: /grok|scout/i,
+        owner: "Grok / Scout Research Cell",
+        inputs: "public web/X research, approved prompts, source notes",
+        allowed: "research, summarize, draft public-safe options",
+        gate: "no posting, likes, follows, DMs, or account actions"
+      },
+      {
+        test: /castor|nova|gemini/i,
+        owner: "Gemini Research Lane Cell",
+        inputs: "queued prompts, continuity checks, research tasks",
+        allowed: "review, compare, suggest continuity fixes",
+        gate: "human approval for provider auth, paid calls, or public claims"
+      },
+      {
+        test: /frankenstein|phone/i,
+        owner: "Frankenstein Phone Cell",
+        inputs: "gateway status, phone watchdog, Tailscale reachability",
+        allowed: "display reachability, recommend repair steps",
+        gate: "no device settings, installs, or shell control from this page"
+      },
+      {
+        test: /mining/i,
+        owner: "Mining Engine Cell",
+        inputs: "logs, chat exports, source notes, backlog",
+        allowed: "digest, dedupe, rank, propose insights",
+        gate: "review before memory writes, public claims, or directive changes"
+      },
+      {
+        test: /self-improve|reflection/i,
+        owner: "Reflection Cell",
+        inputs: "daily receipts, failures, repeated patterns",
+        allowed: "summarize lessons, propose small skill updates",
+        gate: "human or stronger-model review before changing operating rules"
+      },
+      {
+        test: /opengoldsdr|field|sar|gold/i,
+        owner: "Field Science Cell",
+        inputs: "SAR notes, research papers, anomaly pipeline outputs",
+        allowed: "map hypotheses, flag uncertainty, draft research receipts",
+        gate: "research-stage only; no field claims or spend without review"
+      }
+    ];
+
+    const DEFAULT_CELL_PROFILE = {
+      owner: "Unmapped Agent Cell",
+      inputs: "status feed, bridge room, explicit handoffs",
+      allowed: "display, summarize, recommend a safe next step",
+      gate: "human approval for external action, account changes, spend, or shell"
+    };
+
+    const state = {
+      statusData: null,
+      bridgeData: null,
+      selectedCellIndex: 0,
+      bridgeOnline: false
+    };
+
+    function iconSvg(name) {
+      const common = 'fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
+      const icons = {
+        pulse: `<svg viewBox="0 0 24 24" aria-hidden="true"><path ${common} d="M3 12h4l2-7 4 14 2-7h6"/></svg>`,
+        cell: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle ${common} cx="12" cy="12" r="8"/><circle ${common} cx="12" cy="12" r="2.6"/><path ${common} d="M12 4v3M12 17v3M4 12h3M17 12h3"/></svg>`,
+        shield: `<svg viewBox="0 0 24 24" aria-hidden="true"><path ${common} d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z"/><path ${common} d="M9 12l2 2 4-5"/></svg>`,
+        memory: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect ${common} x="5" y="5" width="14" height="14" rx="2"/><path ${common} d="M9 9h6M9 13h6M9 17h4M8 2v3M12 2v3M16 2v3M8 19v3M12 19v3M16 19v3"/></svg>`,
+        vital: `<svg viewBox="0 0 24 24" aria-hidden="true"><path ${common} d="M12 21s-7-4.3-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.7-7 10-7 10z"/><path ${common} d="M8 12h2l1-2 2 5 1-3h2"/></svg>`,
+        lock: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect ${common} x="5" y="10" width="14" height="10" rx="2"/><path ${common} d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>`
+      };
+      return icons[name] || icons.cell;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function normalizeStatus(status) {
+      const value = String(status || "healthy").toLowerCase();
+      return STATUS_ORDER.includes(value) ? value : "healthy";
+    }
+
+    function statusClass(status) {
+      return `status-${normalizeStatus(status)}`;
+    }
+
+    function statusBadge(status) {
+      const normalized = normalizeStatus(status);
+      return `<span class="status-badge"><span class="mini-dot"></span>${STATUS_LABELS[normalized]}</span>`;
+    }
+
+    function compactList(value) {
+      if (Array.isArray(value)) return value.filter(Boolean).join(", ");
+      return value || "--";
+    }
+
+    function cellProfile(cell) {
+      const name = `${cell?.name || ""} ${cell?.role || ""}`;
+      return CELL_PROFILES.find(profile => profile.test.test(name)) || DEFAULT_CELL_PROFILE;
+    }
+
+    function enrichCell(cell) {
+      const profile = cellProfile(cell);
+      return {
+        name: cell?.name || "Unnamed cell",
+        role: cell?.role || "agent-cell",
+        status: normalizeStatus(cell?.status),
+        task: cell?.current_task || "No current task reported.",
+        risk: cell?.risk || "",
+        owner: cell?.owner || profile.owner,
+        inputs: cell?.inputs || profile.inputs,
+        allowed: cell?.allowed_action || profile.allowed,
+        gate: cell?.approval_gate || profile.gate
+      };
+    }
+
+    function anatomyHtml(item) {
+      return `
+        <dl class="anatomy">
+          <div><dt>Owner</dt><dd>${escapeHtml(item.owner)}</dd></div>
+          <div><dt>Inputs</dt><dd>${escapeHtml(compactList(item.inputs))}</dd></div>
+          <div><dt>Allowed action</dt><dd>${escapeHtml(compactList(item.allowed))}</dd></div>
+          <div><dt>Approval gate</dt><dd>${escapeHtml(item.gate)}</dd></div>
+          <div><dt>Status</dt><dd>${STATUS_LABELS[normalizeStatus(item.status)]}</dd></div>
+        </dl>
+      `;
+    }
+
+    function setText(id, value) {
+      const node = document.getElementById(id);
+      if (node) node.textContent = value;
+    }
+
+    function fallbackBridgeUrl() {
+      const host = window.location.hostname;
+      if (host === "localhost" || host === "127.0.0.1" || host === "") return "http://127.0.0.1:8787";
+      if (host.startsWith("100.")) return `http://${host}:8787`;
+      if (host.endsWith(".local")) return `http://${host}:8787`;
+      return "http://127.0.0.1:8787";
+    }
+
+    async function fetchJsonWithTimeout(url, timeout = 2600) {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), timeout);
+      try {
+        const response = await fetch(url, { cache: "no-store", signal: controller.signal });
+        if (!response.ok) throw new Error(`${response.status}`);
+        return await response.json();
+      } finally {
+        window.clearTimeout(timer);
+      }
+    }
+
+    async function loadStatusData() {
+      try {
+        state.statusData = await fetchJsonWithTimeout("assets/organism-status.json", 3200);
+        const updated = state.statusData?.updated_at || "unknown";
+        setText("status-feed", `online - ${updated.replace("T", " ").replace("Z", " UTC")}`);
+      } catch (error) {
+        state.statusData = {
+          updated_at: "",
+          overall_status: "warning",
+          vitality: "--",
+          formula_version: "unavailable",
+          cells: [],
+          watcher: { status: "warning", approval_gates_triggered: 0 },
+          memory: { structured_pages: 0, raw_sources_waiting: 0, coverage_gaps: [] },
+          energy: {}
+        };
+        setText("status-feed", "unavailable");
+      }
+    }
+
+    async function loadBridgeData() {
+      const bridgeUrl = fallbackBridgeUrl();
+      try {
+        state.bridgeData = await fetchJsonWithTimeout(`${bridgeUrl}/api/state`, 2800);
+        state.bridgeOnline = true;
+        setText("bridge-feed", `live - ${bridgeUrl.replace(/^https?:\/\//, "")}`);
+      } catch (error) {
+        state.bridgeData = null;
+        state.bridgeOnline = false;
+        setText("bridge-feed", "offline or blocked");
+      }
+    }
+
+    function renderStatusLegend() {
+      const legend = STATUS_ORDER.map(status => (
+        `<span class="${statusClass(status)}"><span class="mini-dot"></span>${STATUS_LABELS[status]}</span>`
+      )).join("");
+      document.getElementById("status-legend").innerHTML = legend;
+    }
+
+    function renderHero() {
+      const data = state.statusData || {};
+      const cells = Array.isArray(data.cells) ? data.cells.map(enrichCell) : [];
+      const bridgeAgents = Array.isArray(state.bridgeData?.agents) ? state.bridgeData.agents.length : 0;
+      const bridgeText = state.bridgeOnline ? "live" : "off";
+      setText("hero-vitality", data.vitality ?? "--");
+      setText("core-vitality", data.vitality ?? "--");
+      setText("metric-vitality", data.vitality ?? "--");
+      setText("formula-version", data.formula_version ? `(${data.formula_version})` : "");
+      setText("hero-cells", cells.length);
+      setText("hero-bridge", bridgeText);
+      setText("metric-working", cells.filter(cell => cell.status === "working").length);
+      setText("metric-gated", cells.filter(cell => ["gated", "warning", "critical"].includes(cell.status)).length);
+      setText("metric-memory", data.memory?.structured_pages ?? "--");
+      setText("private-bridge-agents", bridgeAgents || "--");
+      setText("private-bridge-approvals", (state.bridgeData?.approvals || []).filter(item => item.status === "pending").length);
+      setText("private-bridge-messages", Array.isArray(state.bridgeData?.meeting) ? state.bridgeData.meeting.length : "--");
+      setText("private-bridge-metabolism", state.bridgeData?.metabolism?.grok?.qwenReachable ? "up" : state.bridgeOnline ? "check" : "off");
+    }
+
+    function renderCellNodes(cells) {
+      const nodeRoot = document.getElementById("cell-nodes");
+      const visible = cells.slice(0, 12);
+      nodeRoot.innerHTML = visible.map((cell, index) => `
+        <button class="cell-node node-${index} ${statusClass(cell.status)}" type="button" data-cell-index="${index}" aria-label="${escapeHtml(cell.name)} ${STATUS_LABELS[cell.status]}">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span>
+            <span class="node-name">${escapeHtml(cell.name)}</span>
+            <span class="node-role">${escapeHtml(cell.role)}</span>
+          </span>
+        </button>
+      `).join("");
+      nodeRoot.querySelectorAll("[data-cell-index]").forEach(button => {
+        button.addEventListener("click", () => {
+          state.selectedCellIndex = Number(button.getAttribute("data-cell-index"));
+          renderSelectedCell(cells);
+        });
+      });
+    }
+
+    function renderSelectedCell(cells) {
+      const cell = cells[state.selectedCellIndex] || cells[0];
+      const target = document.getElementById("selected-cell");
+      if (!cell) {
+        target.innerHTML = `<p class="muted">No cells loaded from the organism status feed.</p>`;
+        return;
+      }
+      target.className = `selected-cell ${statusClass(cell.status)}`;
+      target.innerHTML = `
+        <div class="card-top">
+          <div>
+            <h3 style="margin:0 0 4px">${escapeHtml(cell.name)}</h3>
+            <div class="muted" style="margin:0">${escapeHtml(cell.role)}</div>
+          </div>
+          ${statusBadge(cell.status)}
+        </div>
+        <p class="cell-task">${escapeHtml(cell.task)}${cell.risk ? ` <span style="color:var(--dash-rust)">Risk: ${escapeHtml(cell.risk)}</span>` : ""}</p>
+        ${anatomyHtml(cell)}
+      `;
+    }
+
+    function renderCellGrid(cells) {
+      const root = document.getElementById("cell-grid");
+      root.innerHTML = cells.map((cell, index) => `
+        <article class="cell-card ${statusClass(cell.status)}">
+          <div class="card-top">
+            <span class="icon-mark" aria-hidden="true">${iconSvg("cell")}</span>
+            ${statusBadge(cell.status)}
+          </div>
+          <h3>${escapeHtml(cell.name)}</h3>
+          <div class="role">${escapeHtml(cell.role)}</div>
+          <p class="cell-task">${escapeHtml(cell.task)}${cell.risk ? ` <span style="color:var(--dash-rust)">Risk: ${escapeHtml(cell.risk)}</span>` : ""}</p>
+          ${anatomyHtml(cell)}
+        </article>
+      `).join("");
+    }
+
+    function renderPanelGrid() {
+      const root = document.getElementById("panel-grid");
+      root.innerHTML = PANEL_MANIFEST.map(panel => `
+        <article class="signal-card ${statusClass(panel.status)}">
+          <h3><span>${escapeHtml(panel.label)}</span>${statusBadge(panel.status)}</h3>
+          <div class="card-top" style="justify-content:flex-start">
+            <span class="icon-mark" aria-hidden="true">${iconSvg(panel.icon)}</span>
+            <p class="muted" style="margin:0">Panel is a bounded agent-cell.</p>
+          </div>
+          ${anatomyHtml(panel)}
+        </article>
+      `).join("");
+    }
+
+    function renderPrivateGateGrid() {
+      const risky = [
+        {
+          label: "Posting / social",
+          status: "gated",
+          owner: "Approval Cell",
+          inputs: "draft queues, public-post approvals, bridge receipts",
+          allowed: "display draft count and approval state only",
+          gate: "exact human approval of final text and destination"
+        },
+        {
+          label: "Trading / money",
+          status: "gated",
+          owner: "Funding / Market Gate Cell",
+          inputs: "redacted account events, runway notes, approval queue",
+          allowed: "display redacted state and risk warnings only",
+          gate: "no orders, billing, applications, or spending from dashboard"
+        },
+        {
+          label: "Shell / services",
+          status: "gated",
+          owner: "Watcher / Immune Cell",
+          inputs: "port checks, service health, watchdog reports",
+          allowed: "display repair recommendation only",
+          gate: "explicit approval before restart, install, delete, or persistent change"
+        },
+        {
+          label: "Credentials",
+          status: "critical",
+          owner: "Altair Security Cell",
+          inputs: "secret-adjacent status, auth-gate receipts",
+          allowed: "redact, warn, link safe receipt names",
+          gate: "never reveal secrets; human handles account/login material"
+        }
+      ];
+      document.getElementById("private-gate-grid").innerHTML = risky.map(item => `
+        <article class="signal-card ${statusClass(item.status)}">
+          <h3><span>${escapeHtml(item.label)}</span>${statusBadge(item.status)}</h3>
+          ${anatomyHtml(item)}
+        </article>
+      `).join("");
+    }
+
+    function sanitizeBridgeLine(line) {
+      let text = String(line || "");
+      if (/polymarket|kalshi|portfolio|trading=|hot markets/i.test(text)) {
+        return "[market/account event redacted] Gate: no trading controls in dashboard.";
+      }
+      text = text
+        .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [redacted]")
+        .replace(/\bsk-[A-Za-z0-9_-]{8,}\b/g, "[secret redacted]")
+        .replace(/\boat-[A-Za-z0-9_-]{8,}\b/g, "[secret redacted]")
+        .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, "[email redacted]")
+        .replace(/\/Users\/[^\s)'"]+/g, "[local path]")
+        .replace(/\b100\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, "[tailscale ip]")
+        .replace(/\b(api[_-]?key|password|credential|secret|oauth|billing|payment)\b/gi, "[sensitive:$1]");
+      if (text.length > 220) text = `${text.slice(0, 217)}...`;
+      return text;
+    }
+
+    function renderPrivateSignals() {
+      const root = document.getElementById("private-signal-list");
+      const lines = Array.isArray(state.bridgeData?.meeting) ? state.bridgeData.meeting.slice(-10).reverse() : [];
+      if (!lines.length) {
+        root.innerHTML = `<li>No bridge signals loaded. Public JSON still renders.</li>`;
+        return;
+      }
+      root.innerHTML = lines.map(line => `<li>${escapeHtml(sanitizeBridgeLine(line))}</li>`).join("");
+    }
+
+    function render() {
+      const cells = Array.isArray(state.statusData?.cells) ? state.statusData.cells.map(enrichCell) : [];
+      renderStatusLegend();
+      renderHero();
+      renderCellNodes(cells);
+      renderSelectedCell(cells);
+      renderCellGrid(cells);
+      renderPanelGrid();
+      renderPrivateGateGrid();
+      renderPrivateSignals();
+    }
+
+    async function refreshAll() {
+      const refreshButton = document.getElementById("refresh-button");
+      refreshButton.disabled = true;
+      refreshButton.style.opacity = "0.68";
+      await Promise.all([loadStatusData(), loadBridgeData()]);
+      render();
+      refreshButton.disabled = false;
+      refreshButton.style.opacity = "";
+    }
+
+    function setLayer(layer) {
+      document.body.dataset.layer = layer;
+      document.querySelectorAll("[data-layer-button]").forEach(button => {
+        button.setAttribute("aria-pressed", String(button.getAttribute("data-layer-button") === layer));
+      });
+      setText(
+        "layer-note",
+        layer === "public"
+          ? "Public Terrarium shows sanitized telemetry and public-safe cell state."
+          : "Private Control Room is local, gated, redacted, and still read-only."
+      );
+    }
+
+    document.querySelectorAll("[data-layer-button]").forEach(button => {
+      button.addEventListener("click", () => setLayer(button.getAttribute("data-layer-button")));
+    });
+
+    document.getElementById("refresh-button").addEventListener("click", () => {
+      void refreshAll();
+    });
+
+    document.getElementById("private-gate-form").addEventListener("submit", event => {
+      event.preventDefault();
+      const input = document.getElementById("private-gate-input");
+      const value = input.value.trim().toLowerCase();
+      if (value === "read only" || value === "readonly") {
+        document.body.classList.add("private-unlocked");
+        setText("gate-message", "");
+        renderPrivateSignals();
+        return;
+      }
+      setText("gate-message", "Gate phrase mismatch. This layer opens only as a read-only local view.");
+    });
+
+    document.querySelectorAll(".icon-mark").forEach((node, index) => {
+      if (!node.innerHTML.trim()) node.innerHTML = iconSvg(index === 0 ? "cell" : "lock");
+    });
+
+    void refreshAll();
+    window.setInterval(() => void refreshAll(), 10000);
+  </script>
+</body>
+</html>

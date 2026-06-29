@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://grok-go.local/schemas/agent-resume.schema.json",
+  "title": "Grok Go Agent Resume",
+  "description": "Receipt-backed résumé for one agent-cell in the living dashboard/digital organism. This is not self-description alone: every claimed capability should point at evidence receipts or verifier commands.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "agent_id",
+    "display_name",
+    "role",
+    "lane",
+    "operator_binding",
+    "status",
+    "capabilities",
+    "permissions",
+    "receipt_refs",
+    "verification",
+    "updated_at"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0" },
+    "agent_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]{1,63}$"
+    },
+    "display_name": { "type": "string", "minLength": 1 },
+    "role": { "type": "string", "minLength": 1 },
+    "lane": {
+      "type": "string",
+      "description": "Operational lane: coordinator, research, coding, field, router, safety, buyer, etc."
+    },
+    "operator_binding": {
+      "type": "object",
+      "required": ["host", "profile", "provider", "model", "control_surface"],
+      "properties": {
+        "host": { "type": "string" },
+        "profile": { "type": "string" },
+        "provider": { "type": "string" },
+        "model": { "type": "string" },
+        "control_surface": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Where this agent can be observed/controlled: tmux window, Hermes profile, Telegram lane, dashboard tile, etc."
+        }
+      },
+      "additionalProperties": false
+    },
+    "status": {
+      "type": "string",
+      "enum": ["live", "degraded", "paused", "offline", "planned"]
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "claim", "evidence"],
+        "properties": {
+          "name": { "type": "string" },
+          "claim": { "type": "string" },
+          "evidence": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" },
+            "description": "Receipt paths, ledger queries, command outputs, URLs, or source files backing the claim."
+          },
+          "last_verified_at": { "type": "string" },
+          "confidence": { "type": "string", "enum": ["low", "medium", "high"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "required": ["default_mode", "allowed_actions", "blocked_actions", "approval_required_for"],
+      "properties": {
+        "default_mode": { "type": "string", "enum": ["read_only", "draft_only", "local_execute", "approval_gated_live"] },
+        "allowed_actions": { "type": "array", "items": { "type": "string" } },
+        "blocked_actions": { "type": "array", "items": { "type": "string" } },
+        "approval_required_for": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "receipt_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "ref"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["route_receipt", "approval_receipt", "source_receipt", "ledger", "git_commit", "screenshot", "log", "other"]
+          },
+          "ref": { "type": "string" },
+          "description": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "verification": {
+      "type": "object",
+      "required": ["verifier_commands", "checks_passed", "checks_failed", "unverified_claims"],
+      "properties": {
+        "verifier_commands": { "type": "array", "items": { "type": "string" } },
+        "checks_passed": { "type": "array", "items": { "type": "string" } },
+        "checks_failed": { "type": "array", "items": { "type": "string" } },
+        "unverified_claims": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "dashboard_tile": {
+      "type": "object",
+      "properties": {
+        "tile_id": { "type": "string" },
+        "owner": { "type": "string" },
+        "inputs": { "type": "array", "items": { "type": "string" } },
+        "actions": { "type": "array", "items": { "type": "string" } },
+        "gate": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "notes": { "type": "array", "items": { "type": "string" } },
+    "updated_at": { "type": "string" }
+  },
+  "additionalProperties": false
+}

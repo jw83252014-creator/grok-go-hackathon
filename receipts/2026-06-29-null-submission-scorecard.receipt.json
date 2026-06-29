@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "receipt_id": "2026-06-29-null-submission-scorecard",
+  "created_at": "2026-06-29T22:14:08Z",
+  "agent_id": "null",
+  "task": "Audit and score Nous hackathon submission package against local memory, GitHub, running services, Fable state, and Jade review.",
+  "status": "completed_with_receipt",
+  "artifact_refs": [
+    "/Users/rentamac/nous-package/NULL-SUBMISSION-SCORECARD-2026-06-29.md",
+    "/Users/rentamac/nous-package/assets/conscious-layer-girl-reference.jpg",
+    "/Users/rentamac/nous-package/assets/conscious-layer-girl-reference.md",
+    "/Users/rentamac/nous-package/schemas/agent-resume.schema.json",
+    "/Users/rentamac/nous-package/examples/jade.agent-resume.json"
+  ],
+  "verification": {
+    "checks_passed": [
+      "GitHub CLI authenticated as jw83252014-creator with repo/workflow scopes",
+      "Public GitHub repos living-dashboard and grok-go-organism viewed through gh",
+      "Public URLs returned HTTP 200",
+      "Local dashboard/organism files exist",
+      "Agent Bridge/dashboard/imagine/grokgo-dashboard/local model ports listening",
+      "Jade returned independent score/risk review",
+      "Conscious-layer visual copied into nous-package assets"
+    ],
+    "checks_failed": [
+      "SSH auth to GitHub denied",
+      "Raw git fetch over HTTPS blocked by local TLS/cert/proxy issue",
+      "Fable session currently provider-limited",
+      "Full JSON Schema validation not completed because validator install/tooling blocked"
+    ],
+    "confidence": "high-for-audit, medium-for-final-submit-readiness"
+  }
+}
