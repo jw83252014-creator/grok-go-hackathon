@@ -6,14 +6,13 @@
 We'd rather be precise than oversell. As of submission:
 
 **LIVE + verifiable on the machine right now:**
-- ~30 Hermes agent processes running under launchd (`null`, `librarian`, `frankenstein`, kalshi-monitor, watchdogs); Agent Bridge web service on `127.0.0.1:8787`.
+- ~30 agent/watchdog jobs registered under launchd or the bridge layer (`null`, `librarian`, `frankenstein`, kalshi-monitor, watchdogs), with the core services currently live; Agent Bridge web service on `127.0.0.1:8787`.
 - The full governance spine in code: `bus.py` / `dispatch.py` / `brakes.py` / `routing.yaml` / `ledger.db` — KILLSWITCH, loop-detection, per-lane budgets, single-writer-to-main, every paid call ledgered.
-- Free-GLM cost engineering: a rotating registry of free Cloudflare + z.ai GLM endpoints (`ask-jade.sh`), failover-tested 40 calls / 0 failures, $0 inference.
+- Free-GLM cost engineering: a rotating registry of free Cloudflare GLM-5.2 + z.ai GLM-4.7-flash endpoints (`ask-jade.sh`), failover-tested 40 calls / 0 failures, $0 inference.
 - The living dashboard (conscious interface) + per-agent control surface.
 - **Spend cell (`spend_cell.py`)** — real gated Stripe test charges in both directions, receipted in the ledger.
 
 **ROADMAP / not yet built (we will not claim these as done):**
-- **Stripe loop — LIVE.** Real Stripe test-mode PaymentIntents both directions, gated by the same KILLSWITCH+budget brakes as model calls, written to ledger.db: earn $9.99 in (pi_3TnoAk…), spend $4.20 out (pi_3TnoAl…), net +$5.79. Code: `spend_cell.py`. This is the 'agents that spend' organ, real.
 - **NVIDIA (Nemotron / NemoClaw)** — OpenAI-compatible dispatch path is ready; pointing `local.base_url` at NVIDIA NIM is a config + one task away, not yet run.
 - **Live revenue (EARN)** — the markets-intel cell currently runs on sample data; wiring it to the live Kalshi/Polymarket feed is in progress.
 
@@ -37,7 +36,7 @@ We didn't build an agent. We built an org chart that breathes — and then we en
 
 **The nervous system.** An **Agent Bridge**: a message bus, a dispatcher, and — the part that makes this safe enough to leave running — **brakes**. Every paid action passes one gate before it fires: a killswitch file, per-task loop detection, per-lane daily budgets that auto-downgrade at 80% and halt at 100%, and a SQLite **ledger** recording every token, dollar, and call.
 
-**The economics, solved.** Most agent companies die of inference cost. Ours doesn't pay for thinking. We route cheapest-capable-first across rotating free Cloudflare and z.ai GLM endpoints — **$0 inference, every ledgered call at $0.00**. Paid frontier models are an escalation, one tier at a time, never silent. Stripe Skills drops straight in as the next tier: agents that provision their own SaaS and pay for what they use, every purchase already gated and ledgered.
+**The economics, solved.** Most agent companies die of inference cost. Ours doesn't pay for thinking. We route cheapest-capable-first across rotating free Cloudflare and z.ai GLM endpoints — **$0 inference, every ledgered call at $0.00**. Paid frontier models are an escalation, one tier at a time, never silent. The Stripe test-mode spend cell proves the same gate can govern money flow: agents can request/provision/pay only through the ledger, budgets, and approval gates.
 
 **The interface.** A living dashboard where every tile is a working agent-cell, not a chart — each declaring its owner, inputs, the action it can take, and the gate that stops it. You watch the company think.
 
@@ -71,7 +70,7 @@ Four small Python components in `~/grokgo/`:
 
 ### Free-GLM cost engineering
 
-The cheap lane is engineered to **$0 marginal inference**. `ask-jade.sh` rotates a registry of free GLM-5.2 endpoints (`~/.config/jade-endpoints.json`) — two Cloudflare Workers AI accounts (`@cf/zai-org/glm-5.2`) and two z.ai free-tier accounts — trying each in order, failing over on any error or empty response. Every call logs to `~/health-data/jade-usage.log`. The economics hold because the model is genuinely strong where it's used (jade beats Fable on AIME, 99.2 vs 95.7) and only hard reasoning escalates. The single-endpoint variant (`ask-glm.sh`) forces all traffic through a local **mitmproxy** (`127.0.0.1:8081`) for central ledgering and secret redaction, and both callers check the KILLSWITCH first — no side-channel call ever skips the ledger or brakes.
+The cheap lane is engineered to **$0 marginal inference**. `ask-jade.sh` rotates a registry of free GLM endpoints (`~/.config/jade-endpoints.json`) — two Cloudflare Workers AI accounts running `@cf/zai-org/glm-5.2` and two z.ai free-tier accounts running `glm-4.7-flash` — trying each in order, failing over on any error or empty response. Every call logs to `~/health-data/jade-usage.log`. The economics hold because these models are strong enough for routine research, summaries, classification, and triage, while only hard reasoning escalates. The single-endpoint variant (`ask-glm.sh`) forces all traffic through a local **mitmproxy** (`127.0.0.1:8081`) for central ledgering and secret redaction, and both callers check the KILLSWITCH first — no side-channel call ever skips the ledger or brakes.
 
 ### The living dashboard (the conscious interface)
 
@@ -85,7 +84,7 @@ Two compression layers keep context — the real metabolic cost — small. **rtk
 
 ## Earn / Spend / Operate (Stripe + NVIDIA integration)
 
-The thesis: most entries will *build* an agent that earns, spends, and operates. We already *have* a running organism with a bus, brakes, a ledger, and receipt schemas. The hackathon stack drops into three slots already cut for it — **NemoClaw** becomes the immune system's execution sandbox, **Nemotron 3 Ultra** becomes a fast/free tier in the existing router, and **Stripe Skills for Hermes** becomes the SPEND organ we deliberately left unbuilt.
+The thesis: most entries will *build* an agent that earns, spends, and operates. We already *have* a running organism with a bus, brakes, a ledger, and receipt schemas. The hackathon stack drops into three slots already cut for it — **NemoClaw** becomes the immune system's execution sandbox, **Nemotron 3 Ultra** becomes a fast/free tier in the existing router, and Stripe-style payment actions become the SPEND organ behind the same brakes.
 
 ### EARN — the markets-intel cell
 
@@ -96,11 +95,11 @@ The loop: snapshot markets → flag edges → each edge becomes a bus task → a
 - **NemoClaw (EARN):** market data is untrusted external input. Run the brief-writer inside NemoClaw's sandbox so a prompt-injected market title can't escape into the fleet — the membrane between the public data plane and the organism.
 - **Nemotron 3 Ultra (EARN):** edge detection is high-volume and latency-sensitive. Route the recall/classification pass to Nemotron as the fast `t1` tier in `routing.yaml`; only survivors escalate to a paid tier for the final brief. This is the existing tiered-mining pattern (S1 recall → S2 rubric → S3 adjudicate) pointed at markets.
 
-### SPEND — Stripe Skills for Hermes
+### SPEND — Stripe test-mode cell
 
-This is the organ we deliberately left unbuilt: the guardrail is *"no spending without Jeff,"* so today the fleet recommends purchases but cannot execute them. **Stripe Skills is the missing SPEND effector — and it lands behind the brakes we already have, so it's safe to ship.**
+This organ is now proven in **Stripe test mode**. The guardrail remains *"no spending without Jeff,"* but `spend_cell.py` demonstrates the SPEND effector behind the brakes: two real test-mode PaymentIntents succeeded, one earn event and one spend event, both written into `ledger.db` under `lane=spend`.
 
-A `hermes` buyer cell can buy what the fleet needs, provision its own SaaS, and pay for metered services — e.g. a paid Polymarket/Kalshi key when free tiers throttle, Postgres when the ledger outgrows SQLite, a paid-Claude top-up when free-GLM fails over, an X API tier so `librarian` stops scraping the DOM.
+A `hermes` buyer cell can eventually buy what the fleet needs, provision its own SaaS, and pay for metered services — e.g. a paid Polymarket/Kalshi key when free tiers throttle, Postgres when the ledger outgrows SQLite, a paid-Claude top-up when free-GLM fails over, an X API tier so `librarian` stops scraping the DOM. The live proof today is the gated test-mode payment path, not autonomous production purchasing.
 
 Why it's safe: a purchase is a paid touch, so it travels the same road as a model call — **bus → dispatcher → brakes → ledger**:
 - a `spend` lane with a hard `budgets_usd_daily` cap (80% → buy cheaper/defer, 100% → halt);
@@ -108,13 +107,13 @@ Why it's safe: a purchase is a paid touch, so it travels the same road as a mode
 - **loop detection** kills a runaway "buy → buy → buy" the same way it kills a spinning task;
 - the SPEND tile declares `owner=hermes`, `action=stripe.charge`, `gate=Jeff approves above $N, auto below $N`.
 
-Every purchase emits a `hermes-phase1-receipt` (`tool_name: stripe.*`, artifact_refs = invoice/subscription IDs) plus a `route-receipt` carrying the `blind_spot_review` block. The ledger now records dollars-out next to dollars-in — a real P&L. The Stripe Skill executes **inside NemoClaw**, so card/secret material never sits in a general agent context.
+Every purchase should emit a `hermes-phase1-receipt` (`tool_name: stripe.*`, artifact_refs = invoice/subscription IDs) plus a `route-receipt` carrying the `blind_spot_review` block. The proof run already records dollars-out next to dollars-in in the ledger — a test-mode P&L: earn $9.99, spend $4.20, net +$5.79. The next hardening step is to run the Stripe action inside NemoClaw so card/secret material never sits in a general agent context.
 
 ### OPERATE — the fleet runs real ops
 
 The fleet already runs continuous ops: `null` coordinates, `frankenstein` does device/field ops, `librarian` researches X, `jade` does the grind, `altair` red-teams, the dispatcher loops 24/7, watchers keep launchd jobs alive. Jeff drives it all by iMessage and voice. That *is* the automated company — a running org, not a slide.
 
-EARN and SPEND close a loop: markets-intel **earns** via the alert API (Stripe in) → the org **spends** that revenue via Hermes (Stripe out) to provision the data/compute to find more edges → brakes + ledger keep both inside budget → the dashboard shows the metabolism. The research paper's "metabolism = compute credits, token budget, money" becomes literal: money flows through the same ledger as tokens.
+EARN and SPEND are designed to close a loop: markets-intel **earns** via the alert API (Stripe in) → the org **spends** that revenue via Hermes (Stripe out) to provision the data/compute to find more edges → brakes + ledger keep both inside budget → the dashboard shows the metabolism. Today the markets-intel feed and Stripe test-mode spend/earn path are proven separately; production revenue wiring remains a roadmap item. The research paper's "metabolism = compute credits, token budget, money" becomes literal when those two paths are joined.
 
 - **NemoClaw (OPERATE):** promote it to the standard execution membrane for every cell that touches the outside world (markets, Stripe, X, browser) — the watcher *detects* runaway behavior; NemoClaw *contains* it.
 - **Nemotron 3 Ultra (OPERATE):** make it the default `t1` brain for the fleet's high-volume work, keeping free-GLM as a failover sibling and reserving paid Claude tiers for hard synthesis. A one-line `routing.yaml` change (`t1: nemotron-3-ultra`) — proof the architecture was built to swap brains.
@@ -123,11 +122,11 @@ EARN and SPEND close a loop: markets-intel **earns** via the alert API (Stripe i
 |---|---|---|
 | Nemotron 3 Ultra → fast tier | `t1` in router; edge recall + fleet triage | `routing.yaml` (`t1:`, `local.base_url`); `dispatch.py` already hits OpenAI-compatible `/chat/completions` |
 | NemoClaw → execution membrane | wraps every external-touching step | sandbox invoked by the immune layer; declared as each tile's `gate` |
-| Stripe Skills → SPEND organ | `hermes` buyer cell; new `spend` lane | `bus.submit("spend.purchase", …)` → `brakes.check()` w/ `budgets_usd_daily.spend` |
+| Stripe test-mode cell → SPEND organ | `spend_cell.py`; `spend` lane in ledger | KILLSWITCH + daily-cap gate → Stripe test PaymentIntent → `ledger.db` row |
 | EARN ↔ SPEND via Stripe | metered billing IN, payments OUT | one Stripe account, two directions; both rows in `ledger.db` |
 | Receipts | every earn/spend/op emits strict JSON | `hermes-phase1-receipt`, `route-receipt` |
 
-> **Honest caveat:** SPEND is the only organ not yet running — it's intentionally gated off by the "no spending without Jeff" rule. Stripe Skills activates it, and it only ships *safely* because the brakes/ledger/approval-gate already exist to contain it. That gap-closing is the entry's strongest line, not a weakness.
+> **Honest caveat:** SPEND is proven in Stripe **test mode**, not live money and not autonomous production purchasing. That is the right boundary: the payment effector exists, but production spend remains gated by Jeff, receipts, budgets, and the KILLSWITCH.
 
 ---
 
@@ -210,8 +209,8 @@ Judges will see fifty capability demos today. The differentiator is one sentence
 - **The cost problem is solved, not waved at** — $0 inference at t1, cheapest-capable-first routing, one-tier escalation, every call ledgered at $0.00.
 - **It's safe to leave unattended** — a killswitch you can `touch`, per-lane budgets that auto-halt, loop detection, and an approval gate on every irreversible action.
 - **It's auditable end-to-end** — typed receipts double-booked against a financial ledger, blind-spot reviews that force agents to declare what they didn't check, and failures that are first-class artifacts.
-- **The hackathon stack drops into slots already cut for it** — Nemotron as a one-line tier swap, NemoClaw as the execution membrane, Stripe Skills as the one organ we deliberately left gated off, ready to activate *behind* the brakes.
-- **We're honest about the edges** — SPEND isn't live yet, and the rtk/GLM figures are tested claims, not stage re-measurements. The credibility that buys is worth more than the gap it admits.
+- **The hackathon stack drops into slots already cut for it** — Nemotron as a one-line tier swap, NemoClaw as the execution membrane, Stripe-style payment actions as the spend effector behind the brakes.
+- **We're honest about the edges** — NVIDIA/NemoClaw are not live yet, Stripe is test-mode only, and the rtk/GLM figures are tested claims, not stage re-measurements. The credibility that buys is worth more than the gap it admits.
 
 It's real. It's running. Come watch it work — then `touch KILLSWITCH` and watch it stop.
 

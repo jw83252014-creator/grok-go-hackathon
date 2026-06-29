@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "receipt_id": "2026-06-29-null-honesty-pass",
+  "created_at": "2026-06-29T23:55:00Z",
+  "agent_id": "null",
+  "task": "Tighten Nous submission claims against Fable bridge receipts, ledger, GLM endpoint inventory, and local service evidence.",
+  "status": "completed_with_receipt",
+  "artifact_refs": [
+    "/Users/rentamac/nous-package/SUBMISSION.md",
+    "/Users/rentamac/nous-package/video/VIDEO-SCRIPT.md",
+    "/Users/rentamac/nous-package/schemas/hackathon-receipt.schema.json",
+    "/Users/rentamac/nous-package/scripts/simple_meter.py",
+    "/Users/rentamac/nous-package/receipts/simple-meter-latest.receipt.json"
+  ],
+  "verification": {
+    "checks_passed": [
+      "Removed Stripe LIVE item from ROADMAP block and reframed Stripe as live test-mode spend cell",
+      "Replaced blanket GLM-5.2 claim with Cloudflare GLM-5.2 plus z.ai GLM-4.7-flash",
+      "Removed unverified AIME benchmark numbers from submission text",
+      "Changed launchd wording from all processes running to registered/on-demand/core services live",
+      "Video script now says Stripe test mode rather than real live charges",
+      "Local simple meter returned 10/10 submit_allowed for file completeness"
+    ],
+    "checks_failed": [],
+    "unverified_claims": [
+      "This receipt does not prove final Typeform/Discord/X submission happened",
+      "NVIDIA/NemoClaw remain roadmap/pending manual verification",
+      "Production revenue wiring remains roadmap; Stripe proof is test-mode only"
+    ],
+    "confidence": "high"
+  },
+  "promotion_gate": "submit_after_human_review",
+  "notes": [
+    "This is the honesty pass requested before sending to Nous Research.",
+    "Fable bridge messages were read from /Users/rentamac/agent-comms/meeting.log; direct Messages sqlite access was denied by macOS TCC, but Messages UI confirmed Jeff's latest Mini thread context."
+  ]
+}

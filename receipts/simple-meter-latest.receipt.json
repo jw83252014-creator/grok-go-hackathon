@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "receipt_id": "simple-meter-20260629T235242Z",
+  "created_at": "2026-06-29T23:52:42Z",
+  "agent_id": "null",
+  "task": "Compute local readiness meter for Nous hackathon submission package.",
+  "status": "completed_with_receipt",
+  "artifact_refs": [
+    "/Users/rentamac/nous-package",
+    "git_head:4a645eb"
+  ],
+  "verification": {
+    "checks_passed": [
+      "submission: /Users/rentamac/nous-package/SUBMISSION.md",
+      "null_scorecard: /Users/rentamac/nous-package/NULL-SUBMISSION-SCORECARD-2026-06-29.md",
+      "hackathon_receipt_schema: /Users/rentamac/nous-package/schemas/hackathon-receipt.schema.json",
+      "agent_resume_schema: /Users/rentamac/nous-package/schemas/agent-resume.schema.json",
+      "jade_agent_resume: /Users/rentamac/nous-package/examples/jade.agent-resume.json",
+      "conscious_layer_reference_image: /Users/rentamac/nous-package/assets/conscious-layer-girl-reference.jpg",
+      "conscious_layer_reference_note: /Users/rentamac/nous-package/assets/conscious-layer-girl-reference.md",
+      "living_dashboard_html: /Users/rentamac/nous-package/living-dashboard.html",
+      "audit_receipt: /Users/rentamac/nous-package/receipts/2026-06-29-null-submission-scorecard.receipt.json",
+      "agent_resume_receipt: /Users/rentamac/nous-package/receipts/2026-06-29-agent-resume-schema.receipt.json"
+    ],
+    "checks_failed": [],
+    "unverified_claims": [
+      "This meter is local-file-only; it does not prove public URLs, live services, Stripe, NVIDIA, or GitHub freshness."
+    ],
+    "confidence": "high"
+  },
+  "scores": {
+    "readiness_0_to_10": 10.0,
+    "local_file_percent": 100.0
+  },
+  "promotion_gate": "submit_allowed",
+  "notes": [
+    "Use this as the simple dashboard/submission meter, not as final judge scoring.",
+    "Null scorecard remains the higher-context review artifact."
+  ]
+}

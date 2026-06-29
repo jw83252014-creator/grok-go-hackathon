@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://grok-go.local/schemas/hackathon-receipt.schema.json",
+  "title": "Grok Go Hackathon Receipt",
+  "description": "A small receipt artifact for Nous hackathon submission work. It records what was changed, what was verified, what remains unverified, and whether the artifact is safe to promote into the public submission.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "receipt_id",
+    "created_at",
+    "agent_id",
+    "task",
+    "status",
+    "artifact_refs",
+    "verification",
+    "promotion_gate"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0" },
+    "receipt_id": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9._:-]+$"
+    },
+    "created_at": {
+      "type": "string",
+      "description": "ISO-8601 timestamp. UTC with trailing Z preferred."
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "Agent/cell that produced the receipt, e.g. null, fable, jade, grok, codex."
+    },
+    "task": { "type": "string", "minLength": 1 },
+    "status": {
+      "type": "string",
+      "enum": [
+        "completed_with_receipt",
+        "prepared_not_submitted",
+        "blocked",
+        "failed",
+        "needs_review"
+      ]
+    },
+    "artifact_refs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Absolute paths, URLs, commit refs, or receipt IDs produced/read by the work."
+    },
+    "verification": {
+      "type": "object",
+      "required": ["checks_passed", "checks_failed", "unverified_claims", "confidence"],
+      "properties": {
+        "checks_passed": { "type": "array", "items": { "type": "string" } },
+        "checks_failed": { "type": "array", "items": { "type": "string" } },
+        "unverified_claims": { "type": "array", "items": { "type": "string" } },
+        "confidence": { "type": "string", "enum": ["low", "medium", "high"] }
+      },
+      "additionalProperties": false
+    },
+    "scores": {
+      "type": "object",
+      "description": "Optional 0-10 review scores for scorecard receipts.",
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 10
+      }
+    },
+    "fable_coordination": {
+      "type": "object",
+      "properties": {
+        "prompt_harness_ref": { "type": "string" },
+        "active_tmux_ref": { "type": "string" },
+        "last_seen_message": { "type": "string" },
+        "null_response": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "promotion_gate": {
+      "type": "string",
+      "enum": ["do_not_submit", "submit_after_human_review", "submit_allowed"]
+    },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}
