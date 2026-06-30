@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://grok-go.local/schemas/call-receipt.schema.json",
+  "title": "Grok Go Call Receipt",
+  "description": "Receipt for phone/voice/SMS call events used as sensory input, outbound notification, or approval gate in the living dashboard organism.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "call_receipt_id",
+    "created_at",
+    "agent_id",
+    "provider",
+    "call_direction",
+    "call_status",
+    "counterparty_label",
+    "transcript_ref",
+    "approval_gate_status",
+    "resulting_action_refs",
+    "verification"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0" },
+    "call_receipt_id": { "type": "string", "pattern": "^[a-zA-Z0-9._:-]+$" },
+    "created_at": { "type": "string" },
+    "agent_id": { "type": "string" },
+    "provider": { "type": "string", "enum": ["twilio", "vapi", "bland", "facetime", "manual", "simulated"] },
+    "call_direction": { "type": "string", "enum": ["inbound", "outbound"] },
+    "call_status": { "type": "string", "enum": ["completed", "missed", "failed", "voicemail", "simulated"] },
+    "counterparty_label": {
+      "type": "string",
+      "description": "Human label only; redact real phone numbers from public receipts."
+    },
+    "transcript_ref": { "type": "string" },
+    "approval_gate_status": {
+      "type": "string",
+      "enum": ["pending", "approved_via_call", "rejected_via_call", "expired", "not_applicable"]
+    },
+    "resulting_action_refs": { "type": "array", "items": { "type": "string" } },
+    "verification": {
+      "type": "object",
+      "required": ["checks_passed", "checks_failed", "unverified_claims", "confidence"],
+      "properties": {
+        "checks_passed": { "type": "array", "items": { "type": "string" } },
+        "checks_failed": { "type": "array", "items": { "type": "string" } },
+        "unverified_claims": { "type": "array", "items": { "type": "string" } },
+        "confidence": { "type": "string", "enum": ["low", "medium", "high"] }
+      },
+      "additionalProperties": false
+    },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

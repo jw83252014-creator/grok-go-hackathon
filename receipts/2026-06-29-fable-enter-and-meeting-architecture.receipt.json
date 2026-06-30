@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "receipt_id": "2026-06-29-fable-enter-and-meeting-architecture",
+  "created_at": "2026-06-30T00:11:30Z",
+  "agent_id": "null",
+  "task": "Acknowledge Jeff's correction to hit Enter in Fable's tmux box and create tomorrow's group-meeting/movie-submission planning artifact.",
+  "status": "completed_with_receipt",
+  "artifact_refs": [
+    "/Users/rentamac/agent-comms/plans/null-led-agent-meeting-architecture-2026-06-30.md"
+  ],
+  "verification": {
+    "checks_passed": [
+      "Sent Enter/C-m to active Fable tmux pane and verified prompt returned blank",
+      "Created Null-led agent meeting architecture draft with tomorrow agenda",
+      "Recorded operating note: tmux/Fable messages require Enter/C-m verification"
+    ],
+    "checks_failed": [
+      "Google Calendar integration is not authenticated on this Hermes profile, so no Google Calendar event was created"
+    ],
+    "unverified_claims": [
+      "PJ movie-funding link not yet found",
+      "Existing movie script path not yet re-located in this turn"
+    ],
+    "confidence": "high"
+  },
+  "promotion_gate": "submit_after_human_review",
+  "notes": [
+    "Use cron reminder as fallback if Google Calendar remains unavailable."
+  ]
+}

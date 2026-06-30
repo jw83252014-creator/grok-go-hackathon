@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "call_receipt_id": "sim-call-2026-06-29-hermes-phone-research",
+  "created_at": "2026-06-30T01:20:00Z",
+  "agent_id": "null",
+  "provider": "simulated",
+  "call_direction": "outbound",
+  "call_status": "simulated",
+  "counterparty_label": "Jeff",
+  "transcript_ref": "/Users/rentamac/agent-comms/research/hermes-telephony-calls-research-2026-06-30.md",
+  "approval_gate_status": "not_applicable",
+  "resulting_action_refs": [
+    "/Users/rentamac/nous-package/schemas/call-receipt.schema.json"
+  ],
+  "verification": {
+    "checks_passed": [
+      "Schema example is simulated only; no phone call placed",
+      "Counterparty stored as label, not raw phone number"
+    ],
+    "checks_failed": [],
+    "unverified_claims": [
+      "No live Twilio/Vapi/Bland/FaceTime integration tested"
+    ],
+    "confidence": "medium"
+  },
+  "notes": [
+    "Use this shape for future voice/phone approval gates after Altair security review."
+  ]
+}

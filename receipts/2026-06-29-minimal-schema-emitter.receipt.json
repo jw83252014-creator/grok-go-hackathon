@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "receipt_id": "2026-06-30-null-drop-minimal-schema-emitter-and-verify-it-emits-a-valid-receipt",
+  "created_at": "2026-06-30T01:12:28Z",
+  "agent_id": "null",
+  "task": "Drop minimal schema emitter and verify it emits a valid receipt",
+  "status": "completed_with_receipt",
+  "artifact_refs": [
+    "/Users/rentamac/nous-package/scripts/emit_minimal_receipt.py"
+  ],
+  "verification": {
+    "checks_passed": [
+      "Emitter script written with no third-party dependencies",
+      "Emitter performs lightweight validation of required hackathon receipt fields"
+    ],
+    "checks_failed": [],
+    "unverified_claims": [
+      "This emitter validates the local minimal contract, not full JSON Schema draft 2020-12"
+    ],
+    "confidence": "high"
+  },
+  "promotion_gate": "submit_after_human_review"
+}

@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "receipt_id": "2026-06-30-null-research-hermes-agent-phone-call-capability-and-route-jade-read-only-analysis",
+  "created_at": "2026-06-30T01:15:46Z",
+  "agent_id": "null",
+  "task": "Research Hermes agent phone-call capability and route Jade read-only analysis",
+  "status": "completed_with_receipt",
+  "artifact_refs": [
+    "/Users/rentamac/agent-comms/research/hermes-telephony-calls-research-2026-06-30.md",
+    "/tmp/jade-hermes-calls.txt",
+    "https://hermes-agent.nousresearch.com/docs/user-guide/skills/optional/productivity/productivity-telephony",
+    "https://www.youtube.com/watch?v=zHE434sBw2U"
+  ],
+  "verification": {
+    "checks_passed": [
+      "Official Hermes telephony docs found and summarized",
+      "Jade completed read-only analysis and proposed call receipt fields",
+      "No phone provider credentials, numbers, outbound calls, or spend actions touched"
+    ],
+    "checks_failed": [],
+    "unverified_claims": [
+      "No live telephony setup was tested",
+      "Specific X bookmark URL for Hermes calls was inferred from theme/search, not provided as a separate URL in this turn"
+    ],
+    "confidence": "high"
+  },
+  "promotion_gate": "submit_after_human_review"
+}
